@@ -1,6 +1,6 @@
 import pytest
 
-from python_service_template.infrastructure.healthcheck import (
+from python_service_template.infrastructure.health import (
     DetailedHealthChecker,
     HealthIndicator,
     SimpleHealthChecker,
@@ -11,7 +11,7 @@ class MockCoffeeClient:
     def __init__(self, healthy: bool) -> None:
         self._healthy: bool = healthy
 
-    async def healthcheck(self) -> bool:
+    async def healthy(self) -> bool:
         return self._healthy
 
 

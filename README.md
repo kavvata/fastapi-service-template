@@ -121,7 +121,7 @@ This structure ensures that business rules remain at the core of the project, wi
 | Run dev server      | `python src/python_service_template/app.py --reload` |
 | Run pre-commit      | `uvx pre-commit run --all-files`             |
 | Build Docker image  | `docker buildx build ...`                    |
-| Run Docker          | `docker run --env-file .env.default -p 3000:3000 python-service-template` |
+| Run Docker          | `docker run --env-file .env.default -e HOST=0.0.0.0 -p 3000:3000 python-service-template` |
 
 ---
 
@@ -140,7 +140,7 @@ docker buildx build \
 
 **Run the container:**
 ```sh
-docker run --env-file .env.default -p 3000:3000 python-service-template
+docker run --env-file .env.default -e HOST=0.0.0.0 -p 3000:3000 python-service-template
 ```
 
 - The container uses environment variables from `.env.default` (or your own `.env`).

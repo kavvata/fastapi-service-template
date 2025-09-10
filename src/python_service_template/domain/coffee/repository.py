@@ -11,7 +11,7 @@ class CoffeeClientError(Exception):
 
 class CoffeeClient(abc.ABC):
     @abc.abstractmethod
-    async def healthcheck(self) -> bool:
+    async def healthy(self) -> bool:
         """Check if the client is healthy"""
         pass
 

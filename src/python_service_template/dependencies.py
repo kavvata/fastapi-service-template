@@ -6,7 +6,7 @@ from fastapi import Depends
 from python_service_template.domain.coffee.repository import CoffeeClient
 from python_service_template.domain.coffee.service import CoffeeService, SimpleCoffeeService
 from python_service_template.infrastructure.client.coffee import AsyncCoffeeClient
-from python_service_template.infrastructure.healthcheck import (
+from python_service_template.infrastructure.health import (
     DetailedHealthChecker,
     SimpleHealthChecker,
 )

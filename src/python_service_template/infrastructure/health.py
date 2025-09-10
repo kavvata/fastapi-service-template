@@ -32,16 +32,14 @@ class HealthChecker(abc.ABC, t.Generic[T]):
         self.git_sha = git_sha
 
     async def check(self) -> T:
-        checks = {}
+        checks: dict[str, HealthIndicator] = {}
 
-        # Check coffee service health
-        if await self.coffee_client.healthcheck():
+        if await self.coffee_client.healthy():
             checks["coffee"] = HealthIndicator.HEALTHY
         else:
             checks["coffee"] = HealthIndicator.UNHEALTHY
 
         # More sophisticated checks can be added here
-
         return self._create_status(checks)
 
     @abc.abstractmethod

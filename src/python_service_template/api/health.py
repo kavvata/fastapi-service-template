@@ -7,7 +7,7 @@ from python_service_template.dependencies import (
     detailed_health_checker,
     simple_health_checker,
 )
-from python_service_template.infrastructure.healthcheck import (
+from python_service_template.infrastructure.health import (
     DetailedHealthChecker,
     DetailedHealthStatus,
     HealthIndicator,

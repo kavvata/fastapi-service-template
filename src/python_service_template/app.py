@@ -60,8 +60,8 @@ app.state.instrumentator = instrumentator
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    await app.state.log.aerror("Unhandled exception", stack_info=True, exc_info=True)
+async def global_exception_handler(_request: Request, _exc: Exception) -> JSONResponse:
+    await app.state.log.aexception("Unhandled exception")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal Server Error"},
@@ -86,6 +86,7 @@ if __name__ == "__main__":
     # Configure uvloop as the event loop policy
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
+    workers = None if args.reload else _app_settings.workers
     uvicorn.run(
         f"{__name__}:app",
         host=_app_settings.host,
@@ -95,5 +96,5 @@ if __name__ == "__main__":
         ),
         access_log=True,
         reload=args.reload,
-        workers=_app_settings.workers,
+        workers=workers,
     )

@@ -43,7 +43,7 @@ def coffee_app(coffee_data):
 async def test_healthcheck(aiohttp_client, coffee_app):
     client = await aiohttp_client(coffee_app)
     coffee_client = AsyncCoffeeClient(base_url=str(client.make_url("")))
-    assert await coffee_client.healthcheck() is True
+    assert await coffee_client.healthy() is True
 
 
 @pytest.mark.asyncio
