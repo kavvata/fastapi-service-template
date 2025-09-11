@@ -31,14 +31,16 @@ It comes with:
 - [FastAPI](https://fastapi.tiangolo.com/) for high-performance APIs
 - **Domain-Driven Design (DDD) structure** for clear separation of concerns
 - Modular, domain-driven structure: `domain`, `infrastructure`, and `api` layers
-- [Global error handler](src/python_service_template/app.py#L31) for consistent error responses
-- Structured logging with [structlog](https://www.structlog.org/)
+- [Global error handler](src/python_service_template/app.py) for consistent error responses
+- Structured logging with [structlog](https://www.structlog.org/) and correlation ID tracking
 - Type-safe config management with [pydantic-settings](https://docs.pydantic.dev/latest/usage/pydantic_settings/)
 - Dependency injection via FastAPI's dependency system
 - Async HTTP client ([aiohttp](https://docs.aiohttp.org/))
+- Prometheus metrics integration for observability
+- Request correlation ID tracking via `X-Request-ID` header
 - Example integration with an external API (Coffee API)
-- Health check endpoints (public and private)
-- Docker support for local and production use
+- Health check endpoints (simple and detailed)
+- Docker support for local and production use with multi-stage build
 - Pre-commit hooks for linting, formatting, type checking and unit testing
 - CI workflow for tests and code quality
 
@@ -50,12 +52,13 @@ It comes with:
 - **Web Framework:** FastAPI
 - **Async Runtime:** uvicorn, uvloop
 - **Config:** pydantic, pydantic-settings
-- **Logging:** structlog
+- **Logging:** structlog with correlation ID tracking
+- **Observability:** prometheus-fastapi-instrumentator, asgi-correlation-id
 - **HTTP Client:** aiohttp
 - **Testing:** pytest, pytest-asyncio
 - **Linting/Formatting:** ruff, mypy
 - **Dependency Management:** [uv](https://github.com/astral-sh/uv)
-- **Containerization:** Docker
+- **Containerization:** Docker with multi-stage builds
 
 ## Directory Structure
 
@@ -118,7 +121,7 @@ This structure ensures that business rules remain at the core of the project, wi
 | Run dev server      | `python src/python_service_template/app.py --reload` |
 | Run pre-commit      | `uvx pre-commit run --all-files`             |
 | Build Docker image  | `docker buildx build ...`                    |
-| Run Docker          | `docker run --env-file .env.default -p 8000:8000 python-service-template` |
+| Run Docker          | `docker run --env-file .env.default -e HOST=0.0.0.0 -p 3000:3000 python-service-template` |
 
 ---
 
@@ -130,41 +133,104 @@ This project includes first-class Docker support for local and production use.
 ```sh
 docker buildx build \
    --build-arg GIT_COMMIT_SHA=$(git rev-parse --short HEAD) \
+   --build-arg APP_VERSION=0.1.0 \
    --tag python-service-template \
    .
 ```
 
 **Run the container:**
 ```sh
-docker run --env-file .env.default -p 8000:8000 python-service-template
+docker run --env-file .env.default -e HOST=0.0.0.0 -p 3000:3000 python-service-template
 ```
 
 - The container uses environment variables from `.env.default` (or your own `.env`).
-- The default entrypoint runs the FastAPI app on port 8000.
+- The default entrypoint runs the FastAPI app on port 3000.
+- Multi-stage build optimizes the final image size.
 - For local development, you can mount your code as a volume and override the command if needed.
 
 ---
 
 ## Configuration
 
-All configuration is managed via environment variables. See `.env.default` for available options:
+All configuration is managed via environment variables. See `.env.default` for available options.
+
+**Note:** Environment variables take precedence over `.env` file, which takes precedence over `.env.default` file. See [pydantic-settings documentation](https://docs.pydantic.dev/latest/concepts/pydantic_settings/#field-value-priority) for more details on configuration priority.
 
 | Variable            | Description                        | Default         |
 |---------------------|------------------------------------|-----------------|
 | `HOST`              | Host to bind                       | `127.0.0.1`     |
-| `PORT`              | Port to bind                       | `8000`          |
+| `PORT`              | Port to bind                       | `3000`          |
+| `WORKERS`           | Number of worker processes         | `1`             |
 | `LOGGING__LEVEL`    | Logging level (`DEBUG`, `INFO`, etc.) | `INFO`       |
 | `LOGGING__FORMAT`   | Logging format (`PLAIN` or `JSON`) | `PLAIN`         |
-| `COFFEE_API__HOST`  | Base URL for the Coffee API        | *(none)*        |
+| `COFFEE_API__HOST`  | Base URL for the Coffee API        | `https://api.sampleapis.com/coffee/` |
+| `APP_VERSION`       | Application version                | `0.1.0`         |
+| `GIT_COMMIT_SHA`    | Git commit SHA                     | `sha`           |
 
 ---
 
 ## API Documentation
 
-- **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **OpenAPI schema:** [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+- **Swagger UI:** [http://localhost:3000/docs](http://localhost:3000/docs)
+- **OpenAPI schema:** [http://localhost:3000/openapi.json](http://localhost:3000/openapi.json)
+- **Prometheus metrics:** [http://localhost:3000/metrics](http://localhost:3000/metrics)
 
-All endpoints are organized under the `api/` layer, with versioning support (e.g., `api/v1/`).
+### Health Check Endpoints
+
+#### Simple Health Check - `/`
+A lightweight endpoint that provides basic service status.
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/"
+```
+
+**Example Response:**
+```json
+{
+  "gitCommitSha": "5920388",
+  "heartbeat": "HEALTHY",
+  "version": "0.1.0"
+}
+```
+
+#### Detailed Health Check - `/health`
+A comprehensive endpoint that includes health status of all integrated services.
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/health"
+```
+
+**Example Response:**
+```json
+{
+  "gitCommitSha": "5920388",
+  "heartbeat": "HEALTHY",
+  "version": "0.1.0",
+  "checks": {
+    "coffee": "HEALTHY"
+  }
+}
+```
+
+### API Endpoints
+
+- **Coffee API:** `/api/v1/coffee` - Example integration endpoint
+
+All endpoints support correlation ID tracking via the `X-Request-ID` header for request tracing.
+
+### Metrics
+
+The service exposes Prometheus-compatible metrics on the `/metrics` endpoint.
+
+**Available metrics include:**
+- Request count by method, endpoint, and status code
+- Request duration histograms
+- Active request count
+- Response size histograms
+
+Metrics can be scraped by Prometheus or other monitoring systems for observability and alerting.
 
 ---
 
@@ -199,7 +265,7 @@ python src/python_service_template/app.py --reload
 
 ## Troubleshooting
 
-- If you encounter port conflicts, ensure no other process is using the configured port (default: 8000).
+- If you encounter port conflicts, ensure no other process is using the configured port (default: 3000).
 - For Docker issues, rebuild the image after dependency or config changes.
 
 ---

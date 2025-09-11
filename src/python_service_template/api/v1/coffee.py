@@ -7,7 +7,7 @@ from python_service_template.domain.coffee.entity import CoffeeDrink
 from python_service_template.domain.coffee.service import CoffeeService
 
 router = APIRouter(
-    prefix="/coffee",
+    prefix="/api/v1/coffee",
     tags=["beverages"],
 )
 

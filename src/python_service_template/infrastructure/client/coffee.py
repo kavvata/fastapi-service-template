@@ -36,7 +36,7 @@ class AsyncCoffeeClient(CoffeeClient):
         self.base_url = base_url
         self.log = structlog.get_logger(__name__).bind(class_name=self.__class__.__name__)
 
-    async def healthcheck(self) -> bool:
+    async def healthy(self) -> bool:
         await self.log.adebug("Performing healthcheck")
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{self.base_url}/hot") as response:

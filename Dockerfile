@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 
 # Final stage - minimal runtime image
-FROM python:${PYTHON_VERSION}-slim-${DEBIAN_VERSION}
+FROM python:${PYTHON_VERSION}-slim-${DEBIAN_VERSION} AS runtime
 
 RUN set -ex && \
     apt-get update && \
@@ -53,7 +53,7 @@ RUN groupadd -r app && \
     chown -R app:app /app
 
 # Configure runtime environment
-ARG PORT=8000
+ARG PORT=3000
 ENV PATH="/app/.venv/bin:$PATH" \
     PORT=${PORT} \
     PYTHONUNBUFFERED=1
@@ -65,16 +65,9 @@ EXPOSE ${PORT}
 USER app
 SHELL ["/bin/bash", "-c"]
 
-# Health check using Python's built-in http.client
-# Checks the private health endpoint every 30 seconds
-# Includes checks of all critical dependencies
-# Allows 5 seconds for initial startup
-# Retries 3 times before marking unhealthy
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python3 -c "import http.client, json; conn = http.client.HTTPConnection('localhost', ${PORT}); conn.request('GET', '/api/v1/health'); response = conn.getresponse(); data = json.loads(response.read()); exit(0 if data.get('heartbeat') == 'HEALTHY' and all(status == 'HEALTHY' for status in data.get('checks', {}).values()) and response.status == 200 else 1)"
+ARG GIT_COMMIT_SHA \
+    APP_VERSION
+ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA} \
+    APP_VERSION=${APP_VERSION}
 
-ARG GIT_COMMIT_SHA="sha"
-ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
-
-# Start the FastAPI application
-CMD fastapi run --port ${PORT} /app/src/python_service_template/app.py
+CMD python /app/src/python_service_template/app.py

@@ -1,15 +1,17 @@
-import os
-
 import pytest
 
-from python_service_template.infrastructure.healthcheck import HealthIndicator, PrivateHealthcheck, PublicHealthcheck
+from python_service_template.infrastructure.health import (
+    DetailedHealthChecker,
+    HealthIndicator,
+    SimpleHealthChecker,
+)
 
 
 class MockCoffeeClient:
     def __init__(self, healthy: bool) -> None:
         self._healthy: bool = healthy
 
-    async def healthcheck(self) -> bool:
+    async def healthy(self) -> bool:
         return self._healthy
 
 
@@ -21,12 +23,14 @@ class MockCoffeeClient:
         (False, HealthIndicator.UNHEALTHY),
     ],
 )
-async def test_private_healthcheck_status(client_healthy: bool, expected_status: HealthIndicator) -> None:
+async def test_detailed_health_checker_status(client_healthy: bool, expected_status: HealthIndicator) -> None:
     client = MockCoffeeClient(client_healthy)
-    healthcheck = PrivateHealthcheck(client)  # type: ignore
+    healthcheck = DetailedHealthChecker(client, "1.0.0", "test-sha")  # type: ignore
     response = await healthcheck.check()
     assert response.heartbeat == expected_status
     assert response.checks["coffee"] == expected_status
+    assert response.version == "1.0.0"
+    assert response.git_commit_sha == "test-sha"
 
 
 @pytest.mark.asyncio
@@ -37,28 +41,26 @@ async def test_private_healthcheck_status(client_healthy: bool, expected_status:
         (False, HealthIndicator.UNHEALTHY),
     ],
 )
-async def test_public_healthcheck_status(client_healthy: bool, expected_status: HealthIndicator) -> None:
+async def test_simple_health_checker_status(client_healthy: bool, expected_status: HealthIndicator) -> None:
     client = MockCoffeeClient(client_healthy)
-    healthcheck = PublicHealthcheck(client)  # type: ignore
+    healthcheck = SimpleHealthChecker(client, "1.0.0", "test-sha")  # type: ignore
     response = await healthcheck.check()
     assert response.heartbeat == expected_status
+    assert response.version == "1.0.0"
+    assert response.git_commit_sha == "test-sha"
 
 
 @pytest.mark.asyncio
-async def test_private_healthcheck_git_commit_sha():
-    os.environ["GIT_COMMIT_SHA"] = "testsha123"
+async def test_detailed_health_checker_git_commit_sha():
     client = MockCoffeeClient(True)
-    healthcheck = PrivateHealthcheck(client)
+    healthcheck = DetailedHealthChecker(client, "1.0.0", "testsha123")  # type: ignore
     response = await healthcheck.check()
     assert response.git_commit_sha == "testsha123"
-    del os.environ["GIT_COMMIT_SHA"]
 
 
 @pytest.mark.asyncio
-async def test_public_healthcheck_git_commit_sha():
-    os.environ["GIT_COMMIT_SHA"] = "testsha456"
+async def test_simple_health_checker_git_commit_sha():
     client = MockCoffeeClient(True)
-    healthcheck = PublicHealthcheck(client)
+    healthcheck = SimpleHealthChecker(client, "1.0.0", "testsha456")  # type: ignore
     response = await healthcheck.check()
     assert response.git_commit_sha == "testsha456"
-    del os.environ["GIT_COMMIT_SHA"]

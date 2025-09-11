@@ -6,7 +6,10 @@ from fastapi import Depends
 from python_service_template.domain.coffee.repository import CoffeeClient
 from python_service_template.domain.coffee.service import CoffeeService, SimpleCoffeeService
 from python_service_template.infrastructure.client.coffee import AsyncCoffeeClient
-from python_service_template.infrastructure.healthcheck import PrivateHealthcheck, PublicHealthcheck
+from python_service_template.infrastructure.health import (
+    DetailedHealthChecker,
+    SimpleHealthChecker,
+)
 from python_service_template.settings import Settings
 
 
@@ -25,9 +28,15 @@ def coffee_service(
     return SimpleCoffeeService(client=client)
 
 
-def private_healthcheck(coffee_client: t.Annotated[CoffeeClient, Depends(coffee_client)]) -> PrivateHealthcheck:
-    return PrivateHealthcheck(coffee_client)
+def detailed_health_checker(
+    coffee_client: t.Annotated[CoffeeClient, Depends(coffee_client)],
+    settings: t.Annotated[Settings, Depends(settings)],
+) -> DetailedHealthChecker:
+    return DetailedHealthChecker(coffee_client, settings.app_version, settings.git_commit_sha)
 
 
-def public_healthcheck(coffee_client: t.Annotated[CoffeeClient, Depends(coffee_client)]) -> PublicHealthcheck:
-    return PublicHealthcheck(coffee_client)
+def simple_health_checker(
+    coffee_client: t.Annotated[CoffeeClient, Depends(coffee_client)],
+    settings: t.Annotated[Settings, Depends(settings)],
+) -> SimpleHealthChecker:
+    return SimpleHealthChecker(coffee_client, settings.app_version, settings.git_commit_sha)
