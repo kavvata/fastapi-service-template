@@ -28,9 +28,13 @@ jobs:
         uses: astral-sh/setup-uv@v5
       - name: Set up Python
         run: uv python install
+        working_directory: ./python-service-template
       - name: Install dependencies
         run: uv sync
+        working_directory: ./python-service-template
       - name: Run pre-commit hooks
         run: uv run pre-commit run --all-files
+        working_directory: ./python-service-template
       - name: Run pytest
         run: uv run pytest
+        working_directory: ./python-service-template
