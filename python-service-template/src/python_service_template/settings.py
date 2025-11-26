@@ -29,6 +29,22 @@ class CoffeeApi(BaseModel):
     host: str = Field(description="Coffee API host URL")
 
 
+class Database(BaseModel):
+    host: str = Field(default="db", description="Address to the SQL database host")
+    port: str = Field(default="5432", description="Port number to connect to the SQL database")
+    name: str = Field(default="app", description="SQL Database name")
+    user: str = Field(default="app", description="User with proper permission to the SQL database")
+    password: str = Field(default="secret", description="Password credential to the SQL database")
+
+
+class Cache(BaseModel):
+    host: str = Field(default="cache_default", description="Address to cache DB host")
+    port: str = Field(default="6379", description="Port for cache DB connection")
+    user: str = Field(default="default", description="User for cache DB authentication")
+    password: str = Field(default="default", description="Password for cache DB authentication")
+    name: str = Field(default="app", description="Password for cache DB authentication")
+
+
 class Settings(BaseSettings):
     host: str = Field(description="Host address to bind the server to")
     port: int = Field(description="Port number to run the server on")
@@ -37,6 +53,9 @@ class Settings(BaseSettings):
     coffee_api: CoffeeApi = Field(description="Coffee API configuration")
     app_version: str = Field(default="0.1.0", description="Application version", min_length=1)
     git_commit_sha: str = Field(default="sha", description="Git commit SHA", min_length=1)
+
+    db: Database = Field(description="SQL Database Configuration")
+    cache: Cache = Field(description="Cache Database Configuration")
 
     model_config = SettingsConfigDict(
         env_file=(".env.default", ".env"),

@@ -1,0 +1,41 @@
+services:
+  python-service:
+    build: 
+      context:
+        ./python-service-template/
+      args:
+        WWWUSER: ${WWWUSER:-1000}
+        WWWGROUP: ${WWWGROUP:-1000}
+    command: python /app/src/python_service_template/app.py --reload
+    volumes:
+      - ./python-service-template/src:/app/src:z
+    ports:
+      - 3000:3000
+    env_file: ./python-service-template/.env
+    depends_on:
+      - db
+      - redis
+  db:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+  redis:
+    image: redis:latest
+    platform: linux/amd64
+    command: redis-server --requirepass default
+    environment:
+      REDIS_USER: ${REDIS_USER}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+
+
+volumes:
+  postgres_data:
+

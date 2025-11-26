@@ -6,11 +6,17 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "aiohttp~=3.11.0",
+    "alembic>=1.17.2",
     "asgi-correlation-id~=4.3.4",
+    "asyncpg>=0.30.0",
+    "beautifulsoup4>=4.14.2",
     "fastapi[standard]~=0.115.0",
+    "pandas>=2.3.3",
     "prometheus-fastapi-instrumentator~=7.0.0",
     "pydantic~=2.11.0",
     "pydantic-settings~=2.9.1",
+    "redis>=7.1.0",
+    "sqlalchemy>=2.0.44",
     "structlog~=25.3.0",
     "uvloop~=0.21.0",
 ]

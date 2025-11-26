@@ -9,7 +9,7 @@ from python_service_template.domain.coffee.repository import CoffeeClient, Coffe
 
 
 class CoffeeDrinkDTO(BaseModel):
-    id: int
+    id: int | str
     title: str
     description: str
     image: t.Annotated[HttpUrl | None, BeforeValidator(lambda v: v if "https://" in v else None)]
